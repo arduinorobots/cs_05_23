@@ -1,6 +1,4 @@
 /*
-    DrivePlatform.h
-
     Created by Kirill Osipov on 31/01/2016.
     Copyright (c) Kirill Osipov 2016. All rights reserved.
 */
@@ -11,9 +9,9 @@
 #include "WProgram.h"
 #endif
 
-#include "DrivePlatform.h"
+#include "Motor.h"
 
-DrivePlatform::DrivePlatform() {
+Motor::Motor() {
     _accelStepper = 0;
     _accelSpeed = 0;
     _previousMillis = 0;
@@ -22,9 +20,9 @@ DrivePlatform::DrivePlatform() {
     _endSpeed = 0;
 }
 
-void DrivePlatform::attachMotor(int pin_in, int pin_en) {
+void Motor::attach(int pin_in, int pin_en) {
 
-    Motor motor = {pin_in, pin_en};
+    MotorPin motor = {pin_in, pin_en};
     _motorPins[_motorCount] = motor;
     _motorCount++;
 
@@ -35,11 +33,11 @@ void DrivePlatform::attachMotor(int pin_in, int pin_en) {
 
 }
 
-void DrivePlatform::acceleration(uint8_t acceleration) {
+void Motor::acceleration(uint8_t acceleration) {
     _acceleration = acceleration >= 10 ? acceleration / 10 : 1;
 }
 
-void DrivePlatform::driveWithSpeed(int endSpeed) {
+void Motor::drive(int endSpeed) {
 
     _endSpeed = abs(constrain(endSpeed, -255, 255));
     bool direction = endSpeed >= 0 ? HIGH : LOW;
@@ -65,15 +63,17 @@ void DrivePlatform::driveWithSpeed(int endSpeed) {
 
 }
 
-void DrivePlatform::turnAt(direction direction) {
+void Motor::turnAt(direction direction) {
 
     if (_motorCount >= 2) {
 
         switch (direction) {
             case left:
+                digitalWrite(_motorPins[0].pin_in, HIGH);
+                analogWrite(_motorPins[0].pin_en, 100);
 
-
-
+                digitalWrite(_motorPins[1].pin_in, LOW);
+                analogWrite(_motorPins[1].pin_en, 100);
             break;
             case right:
 

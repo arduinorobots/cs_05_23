@@ -1,17 +1,15 @@
 /*
-    DrivePlatform.h
-
     Created by Kirill Osipov on 31/01/2016.
     Copyright (c) Kirill Osipov 2016. All rights reserved.
 */
 
-#ifndef DrivePlatform_h
-#define DrivePlatform_h
+#ifndef Motor_h
+#define Motor_h
 
-#define MAX_MOTORS 4    // arduino need reserved mem befor start :(
+#define MAX_MOTORS 2    // arduino need reserved mem befor start :(
 #include <inttypes.h>
 
-struct Motor {
+struct MotorPin {
     uint8_t pin_in;     // for LOW HIGH
     uint8_t pin_en;     // for 0 - 255
 };
@@ -20,13 +18,13 @@ enum direction {
     left, right
 };
 
-class DrivePlatform {
+class Motor {
 
     public:
-        DrivePlatform();
-        void attachMotor(int pin_in, int pin_en);
+        Motor();
+        void attach(int pin_in, int pin_en);
+        void drive(int endSpeed);
         void acceleration(uint8_t acceleration);
-        void driveWithSpeed(int endSpeed);
         void turnAt(direction direction);
 
     private:
@@ -36,7 +34,7 @@ class DrivePlatform {
         uint16_t _accelSpeed;
         int16_t _endSpeed;
         uint8_t _motorCount;
-        Motor _motorPins[MAX_MOTORS];
+        MotorPin _motorPins[MAX_MOTORS];
 
 };
 
