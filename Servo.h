@@ -8,18 +8,15 @@
 
 #include <inttypes.h>
 
-#define ANGLE_MIN   0
-#define ANGLE_MAX   180
-
 class Servo {
 
     public:
         Servo();
         void attach(int pin);
         void write(int angle);
+        void switcher();
 
     private:
-        uint16_t _previousMillis;
         uint8_t _angle;
         uint8_t _pin;
 
