@@ -3,21 +3,20 @@
     Copyright (c) Kirill Osipov 2016. All rights reserved.
 */
 
-#ifndef Servo_h
-#define Servo_h
+#ifndef KOServo_h
+#define KOServo_h
 
 #include <inttypes.h>
 
-class Servo {
+class KOServo {
 
     public:
-        Servo();
+        KOServo();
         void attach(int pin);
-        void write(int angle);
-        void switcher();
+        void write(bool state);
 
     private:
-        uint8_t _angle;
+        uint16_t _previousMillis;
         uint8_t _pin;
 
 };
