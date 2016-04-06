@@ -3,73 +3,127 @@
     Copyright (c) Kirill Osipov 2016. All rights reserved.
 */
 
-#include "Motor.h"
-#include "Servo.h"
+#include <Servo.h>
 
+#include "KOPin.h"
+#include "KOMotor.h"
+#include "KOBuzzer.h"
+#include "KOEcho.h"
 
-#define PIN_MOT_EN_01   10
-#define PIN_MOT_IN_01   12
+#define TIMESTEP    500
+#define MAX_DIST    100
+#define MIN_DIST    20
 
-#define PIN_MOT_EN_02   11
-#define PIN_MOT_IN_02   13
+Servo servo_on_1, servo_on_2, servo_off;
+KOMotor platform = KOMotor();
+KOBuzzer buzzer = KOBuzzer();
+KOEcho echo = KOEcho();
 
-#define PIN_BUZZER      4
-#define PIN_SERVO       9
-
-// #define PIN_CARGO       100
-// #define PIN_MAGNET      100
-
-// #define PIN_ECHO        8
-// #define PIN_TRIG        9
-
-Servo servo = Servo();
-Motor platform = Motor();
-
-unsigned int servoPosition[] = {10,180};
 unsigned long previousMillis = 0;
-bool magnetState = HIGH;
+unsigned long magicMillis = 0;
+direction curDir = none;
+unsigned int curDis = 1000;
+int triggerCounter = 0;
+
+static unsigned int servoState[2] = {20, 160};
+
+bool cargo = 0;
+bool target = 0;
+bool trigged = 0;
+bool magic =0;
 
 void setup() {
 
-    // pinMode(PIN_MAGNET, OUTPUT);
+    buzzer.attach(PIN_BUZZER);
 
-    servo.attach(PIN_SERVO);
-    servo.write(200);
+    servo_off.attach(PIN_SERVO_OFF, servoState[0], servoState[1]);
+    servo_on_1.attach(PIN_SERVO_ON_1, servoState[0], servoState[1]);
+    servo_on_2.attach(PIN_SERVO_ON_2, servoState[0], servoState[1]);
 
     platform.attach(PIN_MOT_IN_01, PIN_MOT_EN_01);
     platform.attach(PIN_MOT_IN_02, PIN_MOT_EN_02);
 
-    // pinMode(PIN_ECHO, INPUT);
-    // pinMode(PIN_TRIG, OUTPUT);
+    echo.attach(PIN_ECHO, PIN_TRIG);
+
+    pinMode(PIN_RED, OUTPUT);
+    pinMode(PIN_YLW, OUTPUT);
+    pinMode(PIN_CARGO, INPUT);
 
     // Serial.begin(9600);
 }
 
 void loop() {
 
-    // digitalWrite(PIN_MAGNET, HIGH);
-
     unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= 10000) {
+    if (currentMillis - previousMillis > TIMESTEP) {
         previousMillis = currentMillis;
 
-        int ss = magnetState ? servoPosition[LOW] : servoPosition[HIGH];
-        magnetState = !magnetState;
-        servo.write(ss);
-
+        cargo = cargoState();
+        if (!trigged) {
+            triggerCounter++;
+            cargoTrigger();
+        }
     }
 
-    // platform.drive(-100);
+    if (cargo && trigged) { // поиск цели
 
-    // Serial.println(measureDistance());
+        // buzzer.toneAlert();
+        curDis = echo.measureDistance();
 
+        if (currentMillis - magicMillis > 200) {
+            magicMillis = currentMillis;
+
+            if (curDis > MAX_DIST) curDir = right;
+            if (curDis < MAX_DIST && curDis >= MIN_DIST) curDir = forward;
+            if (curDis < MIN_DIST && curDis >= MIN_DIST/2) curDir = none;
+            if (curDis < MIN_DIST/2) curDir = back;
+
+            magic = !magic;
+        }
+
+        target = curDis > MIN_DIST ? 0 : 1;
+    }
+
+    curDir = magic && cargo ? curDir : none;
+    platform.turn(curDir);
+
+    if (cargo && trigged && target) { // спуск затвора
+
+        delay(TIMESTEP);
+        servo_off.write(servoState[1]);
+        delay(TIMESTEP);
+        target = !target;
+        trigged = !trigged;
+        cargo = !cargo;
+    }
+
+    digitalWrite(PIN_RED, cargo);
+    digitalWrite(PIN_YLW, !cargo);
 }
 
-// unsigned int measureDistance() {
+bool cargoState() {
 
-//     digitalWrite(PIN_TRIG, HIGH);
-//     digitalWrite(PIN_TRIG, LOW);
-//     int distance = pulseIn(PIN_ECHO, HIGH, 15000)/54;
-//     return constrain(distance, 1, 300);
+    unsigned int analogData = analogRead(PIN_CARGO);
+    unsigned int cargoData = map(analogData, 0, 1023, 0, 200);
+    bool state = cargoData > 70 ? 0 : 1;
+    return state;
+}
 
-// }
+void cargoTrigger() {
+    switch (triggerCounter) {
+        case 1:
+            servo_on_1.write(servoState[1]);
+            servo_on_2.write(servoState[0]);
+            servo_off.write(servoState[1]);
+        break;
+        case 2:
+            servo_off.write(servoState[0]);
+        break;
+        case 3:
+            servo_on_1.write(servoState[0]);
+            servo_on_2.write(servoState[1]);
+            triggerCounter = 0;
+            trigged = !trigged;
+        break;
+    }
+}
