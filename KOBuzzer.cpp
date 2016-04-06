@@ -11,24 +11,28 @@
 
 #include "KOBuzzer.h"
 
-#define FREQUENCY   200
-#define DURATION    200
-
-KOBuzzer::KOBuzzer() { }
+KOBuzzer::KOBuzzer() {
+    _frequency = 200;
+    _duration = 200;
+}
 
 void KOBuzzer::attach(int pin) {
     _pin = pin;
     pinMode(_pin, OUTPUT);
 }
 
-void KOBuzzer::toneAlert() {
+void KOBuzzer::toneAlert(unsigned int duration) {
 
     uint16_t _currentMillis = millis();
-    if (_currentMillis - _previousMillis >= DURATION * 2) {
+    if (_currentMillis - _previousMillis > duration * 2) {
         _previousMillis = _currentMillis;
 
-        tone(_pin, FREQUENCY, DURATION);
+        tone(_pin, _frequency, duration);
 
     }
 
+}
+
+void KOBuzzer::toneAlert() {
+    this->toneAlert(_duration);
 }

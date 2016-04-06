@@ -14,9 +14,10 @@ class KOBuzzer {
         KOBuzzer();
         void attach(int pin);
         void toneAlert();
+        void toneAlert(unsigned int duration);
 
     private:
-        uint8_t _pin;
+        uint8_t _pin, _frequency, _duration;
         uint16_t _previousMillis;
 
 };
