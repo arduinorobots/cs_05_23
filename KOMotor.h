@@ -15,7 +15,7 @@ struct MotorPin {
 };
 
 enum direction {
-    left, right, none
+    left, right, forward, back, none
 };
 
 class KOMotor {

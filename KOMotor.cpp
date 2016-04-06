@@ -13,7 +13,7 @@
 
 #define SPEED_MIN   100
 #define SPEED_MAX   255
-#define SPEED_TURN  100
+#define SPEED_TURN  255
 
 KOMotor::KOMotor() {
     _motorCount = 0;
@@ -45,16 +45,28 @@ void KOMotor::drive(int endSpeed) {
 
 }
 
-void KOMotor::turn(direction direction) {
+void KOMotor::turn(direction dir) {
 
-    uint8_t speed = direction == none ? 0 : SPEED_TURN;
+    uint8_t speed = dir == none ? 0 : SPEED_TURN;
     if (_motorCount >= 2) {
 
-        bool switcher = direction == right ? HIGH : LOW;
+        bool way_1 = LOW, way_2 = LOW;
 
-        digitalWrite(_motorPins[0].pin_in, switcher);
+        switch (dir) {
+            case forward:   way_1 = way_2 = LOW;
+            break;
+            case back:      way_1 = way_2 = HIGH;
+            break;
+            case right:     way_1 = LOW; way_2 = HIGH;
+            break;
+            case left:      way_1 = HIGH; way_2 = LOW;
+            break;
+        }
+
+        digitalWrite(_motorPins[0].pin_in, way_1);
+        digitalWrite(_motorPins[1].pin_in, way_2);
+
         analogWrite(_motorPins[0].pin_en, speed);
-        digitalWrite(_motorPins[1].pin_in, !switcher);
         analogWrite(_motorPins[1].pin_en, speed);
 
     }
